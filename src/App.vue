@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div class="paddingLeft20">
-      <div style="margin: 20px">
+      <div style="margin: 20px 0">
         <h4>Upload Files</h4>
       </div>
 
@@ -34,6 +34,11 @@ export default {
   min-width: 700px;
 }
 .paddingLeft20 {
-  padding-left: 20px
+  margin: auto;
+  width: 50%;
+  padding-bottom: 250px;
+}
+h4 {
+  margin-bottom: 0;
 }
 </style>

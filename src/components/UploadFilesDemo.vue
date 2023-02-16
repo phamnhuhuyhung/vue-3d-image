@@ -4,23 +4,23 @@
     <button @click="submitFile">Upload!</button>
     <div v-if="isUploadSuccess" class="uploadedImage">
       <div class="marginRight20">
-        <p>Uploaded Image</p>
+        <p>1. Uploaded Image</p>
         <img :src="uploadedImage" id="uploadedImage11" alt="" @load="onUploadImgLoad" crossOrigin="Anonymous"/><br/>
         <button @click="convertToNoBG(uploadedImage)">REMOVE BACKGROUND</button>
       </div>
       <div class="marginRight20" v-if="noBGImg">
-        <p>Remove background</p>
+        <p>2. Remove background</p>
         <img :src="noBGImgSrc" alt="" id="uploadedImage" crossOrigin="Anonymous" :width="w" :height="h"/><br/>
         <button @click="convert">SHOW DEPTH MAP</button>
       </div>
       <div class="marginRight20" id="depthMap">
-        <p v-if="mapImages">Depth Map</p>
+        <p v-if="mapImages">3. Depth Map</p>
         <p v-else-if="isLoading && !mapImages">Loading</p>
         <img v-if="mapImages" :src="mapImages"/>
       </div>
       <div v-if="noBGImgSrc" class="displayImage">
-        <div>
-          <p v-if="mapImages">Result</p>
+        <div class="displayImageID">
+          <p v-if="mapImages">4. 3D</p>
           <div id="wrap"/>
         </div>
       </div>
@@ -32,7 +32,7 @@
 import axios from "axios";
 import {tensorflowFunc} from '../services/tensorFlow.js'
 import {dataURItoBlob} from '../services/canvasToUrl.js'
-import {draw3d} from '../services/draw3d.js'
+import {draw3d, removeDraw3d} from '../services/draw3d.js'
 import { Fake3dImageEffect } from '@luxdamore/vue-fake3d-image-effect';
 import '@luxdamore/vue-fake3d-image-effect/dist/Fake3dImageEffect.css';
 
@@ -94,7 +94,7 @@ export default {
         axios.put(newURL, blob, { headers }).then(() => {
           this.mapImages = newURL;
           draw3d(this.width, this.height, this.noBGImgSrc, this.mapImages);
-        this.isLoading = false;
+          this.isLoading = false;
         }).catch(
           function (error) {
             console.log('Show error notification!', error)
@@ -118,9 +118,9 @@ export default {
       this.h = String(img.clientHeight) + 'px';
     },
     submitFile() {
-      // if (this.uploadedImage) {
-      //   removeDraw3d();
-      // }
+      if (this.uploadedImage) {
+        removeDraw3d();
+      }
       this.isUploadSuccess = false;
       this.noBGImgSrc = null;
       this.noBGImg = null;
@@ -156,16 +156,14 @@ export default {
 </script>
 
 <style>
-  img {
-    /* max-width: 500px; */
-  }
   .uploadedImage {
     margin-top: 20px;
     display: flex;
+    flex-direction: column;
   }
   .marginRight20 {
     margin-right: 20px;
-    /* max-width: 500px; */
+    padding-bottom: 40px;
   }
   .converting {
     text-align: center;
@@ -184,6 +182,10 @@ export default {
   .displayImage {
     position: relative;
     display: flex;
+    width: 100%;
+  }
+  .displayImageID {
+    width: 100%;
   }
   #stage {
     width: 400px;

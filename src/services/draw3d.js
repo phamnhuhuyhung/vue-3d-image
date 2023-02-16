@@ -3,19 +3,25 @@
 // eslint-disable-next-line no-unused-vars
 var w = 0, h = 0;
 var renderer;
-var stage = new PIXI.Container();
-var container = new PIXI.Container();
-var foreground = new PIXI.Container();
-stage.addChild(container);
-stage.addChild(foreground); 
+var stage;
+var container;
+var foreground 
 
 var f;
 var fg;
 var d;
 var mousex = w/2, mousey = h/2;
-var ploader = new PIXI.loaders.Loader();
+var ploader;
 
 export const draw3d = (width, height, img, mapImg) => {
+  stage = new PIXI.Container();
+  container = new PIXI.Container();
+  foreground = new PIXI.Container();
+  stage.addChild(container);
+  stage.addChild(foreground);
+  ploader = new PIXI.loaders.Loader();
+  mousex = 0;
+  mousey = 0;
   w = width;
   h = height;
   renderer = new PIXI.WebGLRenderer({
@@ -34,14 +40,20 @@ export const draw3d = (width, height, img, mapImg) => {
 }
 
 export const removeDraw3d = () => {
-  stage.destroy(true);
-  stage = new PIXI.Container();
-  renderer = new PIXI.WebGLRenderer({
-    width: 0,
-    height: 0,
-    backgroundColor: 0xffffff
-  });
-  ploader.reset(); 
+  if(stage) {
+    while(stage.children[0]) { 
+      stage.removeChild(stage.children[0]);
+    }
+    ploader.reset();
+    stage.destroy(true);
+    stage = null;
+    container = null;
+    // renderer.view.destroy(true);
+    renderer.view = null;
+
+    // renderer.destroy(true);
+    renderer = null;
+  } 
 }
 
 function startMagic() {
@@ -61,11 +73,13 @@ function startMagic() {
 
 
 function animate() {
-  f.scale.x = (window.innerWidth/2 - mousex) / 80;
-  f.scale.y = (window.innerHeight/2 - mousey) / 80;
+  f.scale.x = (window.innerWidth - mousex) / 80;
+  f.scale.y = (window.innerHeight - mousey) / 80;
   fg.addChild(d);
   d.renderable=false;
    
-  renderer.render(stage);       
-  requestAnimationFrame(animate);
+  if (stage) {
+    renderer.render(stage);
+    requestAnimationFrame(animate);
+  }
 }
