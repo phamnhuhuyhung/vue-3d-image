@@ -13,8 +13,6 @@
       <div class="marginRight20" v-if="noBGImg">
         <p>2. Remove background</p>
         <img :src="noBGImgSrc" alt="" id="uploadedImage" crossOrigin="Anonymous" :width="w" :height="h"/><br/>
-        <canvas id="noBGImgSrcCanvas"/>
-        <button @click="rotate()">EDIT ROTATE</button>
         <button @click="convert">SHOW DEPTH MAP</button>
       </div>
     </div>
