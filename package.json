@@ -19,6 +19,7 @@
     "@tensorflow/tfjs-core": "^4.2.0",
     "axios": "^0.19.2",
     "core-js": "^3.6.4",
+    "pixi.js": "^7.1.2",
     "vue": "^2.6.11",
     "vue-range-slider": "^0.6.0"
   },

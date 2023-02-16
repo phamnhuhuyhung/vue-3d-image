@@ -16,17 +16,12 @@
       <div class="marginRight20" id="depthMap">
         <p v-if="mapImages">Depth Map</p>
         <p v-else-if="isLoading && !mapImages">Loading</p>
+        <img v-if="mapImages" :src="mapImages"/>
       </div>
-      <div v-if="mapImages" class="displayImage">
+      <div v-if="noBGImgSrc" class="displayImage">
         <div>
-          <p >Result</p>
-          <fake3d-image-effect
-            tag="div"
-            :image="noBGImgSrc"
-            :image-map="mapImages"
-            :height="h"
-            :width="w"
-          />
+          <p v-if="mapImages">Result</p>
+          <div id="wrap"/>
         </div>
       </div>
     </div>
@@ -36,6 +31,8 @@
 <script>
 import axios from "axios";
 import {tensorflowFunc} from '../services/tensorFlow.js'
+import {dataURItoBlob} from '../services/canvasToUrl.js'
+import {draw3d} from '../services/draw3d.js'
 import { Fake3dImageEffect } from '@luxdamore/vue-fake3d-image-effect';
 import '@luxdamore/vue-fake3d-image-effect/dist/Fake3dImageEffect.css';
 
@@ -60,6 +57,8 @@ export default {
       url: null,
       w: 0,
       h: 0,
+      width: 0,
+      height: 0,
       loadingNoBG: false,
       noBGImg: null,
       noBGImgSrc: null,
@@ -68,26 +67,39 @@ export default {
     };
   },
   methods: {
-    onLoadNOBG() {
-
-    },
     async convertToNoBG (img) {
       fetch('https://k3nb3wm4vuxmel6raf2tg2ri2e0orfwj.lambda-url.ap-northeast-1.on.aws/?src=' + img)
         .then(res => res.blob()) // Gets the response and returns it as a blob
         .then(blob => {
-          let objectURL = URL.createObjectURL(blob);
-          this.noBGImg = objectURL;
-          this.noBGImgSrc = objectURL;
+          const headers = { 'Content-Type': blob.type };
+          const newURL = 'https://cx-dev-s3-test-lamrembg.s3.ap-northeast-1.amazonaws.com/'+'converted_image_'+this.Images.name;
+            axios.put(newURL, blob, { headers }).then(() => {
+              this.isUploadSuccess = true;
+              this.noBGImg = newURL;
+              this.noBGImgSrc = newURL;
+            }).catch(
+              function (error) {
+                console.log('Show error notification!', error)
+              }
+            )
       });
     },
     async convert () {
       this.isLoading = true;
       const canvas = await tensorflowFunc();
-      const aaa = document.getElementById('depthMap');
-      aaa.appendChild(canvas);
-      const jpegUrl = canvas.toDataURL("image/png");
-      this.mapImages = jpegUrl;
-      this.isLoading = false;
+      let img_b64 = canvas.toDataURL('image/png');
+      let blob = dataURItoBlob(img_b64);
+      const headers = { 'Content-Type': blob.type };
+      const newURL = 'https://cx-dev-s3-test-lamrembg.s3.ap-northeast-1.amazonaws.com/'+'converted_image_depth_'+this.Images.name;
+        axios.put(newURL, blob, { headers }).then(() => {
+          this.mapImages = newURL;
+          draw3d(this.width, this.height, this.noBGImgSrc, this.mapImages);
+        this.isLoading = false;
+        }).catch(
+          function (error) {
+            console.log('Show error notification!', error)
+          }
+        )
     },
     selectFile() {
       this.selectedFiles = this.$refs.file.files;
@@ -100,20 +112,22 @@ export default {
     onUploadImgLoad() {
       let img = document.getElementById('uploadedImage11'); 
       //or however you get a handle to the IMG
+      this.width = img.clientWidth;
+      this.height = img.clientHeight;
       this.w = String(img.clientWidth) + 'px';
       this.h = String(img.clientHeight) + 'px';
     },
     submitFile() {
+      // if (this.uploadedImage) {
+      //   removeDraw3d();
+      // }
       this.isUploadSuccess = false;
       this.noBGImgSrc = null;
       this.noBGImg = null;
       this.uploadedImage = null;
       this.convertedImage = null;
-      this.isLoaded = false
-      const formData = new FormData();
-      formData.append('file', this.Images);
+      this.isLoaded = false;
       const headers = { 'Content-Type': this.Images.type };
-      console.log(this.Images)
       this.mapImages = null;
       axios.put('https://cx-dev-s3-test-lamrembg.s3.ap-northeast-1.amazonaws.com/'+this.Images.name, this.Images, { headers }).then((res) => {
         console.log(res, 'OK')
@@ -143,7 +157,7 @@ export default {
 
 <style>
   img {
-    max-width: 500px;
+    /* max-width: 500px; */
   }
   .uploadedImage {
     margin-top: 20px;
@@ -151,7 +165,7 @@ export default {
   }
   .marginRight20 {
     margin-right: 20px;
-    max-width: 500px;
+    /* max-width: 500px; */
   }
   .converting {
     text-align: center;
