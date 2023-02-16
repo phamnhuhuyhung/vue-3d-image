@@ -1,7 +1,9 @@
 <template>
   <div>
-    <input type="file" @change="uploadFile" ref="file">
-    <button @click="submitFile">Upload!</button>
+    <div class="flex-auto">
+      <image-uploader @input="uploadFile" :maxWidth="500" outputFormat="blob" :preview="false"></image-uploader>
+      <button @click="submitFile">Upload!</button>
+    </div>
     <div v-if="isUploadSuccess" class="uploadedImage">
       <div class="marginRight20">
         <p>1. Uploaded Image</p>
@@ -11,8 +13,12 @@
       <div class="marginRight20" v-if="noBGImg">
         <p>2. Remove background</p>
         <img :src="noBGImgSrc" alt="" id="uploadedImage" crossOrigin="Anonymous" :width="w" :height="h"/><br/>
+        <canvas id="noBGImgSrcCanvas"/>
+        <button @click="rotate()">EDIT ROTATE</button>
         <button @click="convert">SHOW DEPTH MAP</button>
       </div>
+    </div>
+    <div v-if="isUploadSuccess" class="uploadedImage">
       <div class="marginRight20" id="depthMap">
         <p v-if="mapImages">3. Depth Map</p>
         <p v-else-if="isLoading && !mapImages">Loading</p>
@@ -33,40 +39,34 @@ import axios from "axios";
 import {tensorflowFunc} from '../services/tensorFlow.js'
 import {dataURItoBlob} from '../services/canvasToUrl.js'
 import {draw3d, removeDraw3d} from '../services/draw3d.js'
-import { Fake3dImageEffect } from '@luxdamore/vue-fake3d-image-effect';
-import '@luxdamore/vue-fake3d-image-effect/dist/Fake3dImageEffect.css';
+import ImageUploader from 'vue-image-upload-resize'
 
 export default {
   name: "upload-files",
   components: {
     // eslint-disable-next-line vue/no-unused-components
-    'fake3d-image-effect': Fake3dImageEffect,
+    ImageUploader,
   },
   data() {
     return {
-      images: null,
       isUploadSuccess: false,
       uploadedImage: null,
-      convertedImage: null,
       isLoaded: false,
-      deg: 0,
-      sliderValue: 0,
-      scriptAdded: false,
       mapImages: null,
       isLoading: false,
-      url: null,
       w: 0,
       h: 0,
       width: 0,
       height: 0,
-      loadingNoBG: false,
       noBGImg: null,
       noBGImgSrc: null,
       newFile: null,
-      showPreview: false
+      showPreview: false,
     };
   },
   methods: {
+    rotate() {
+    },
     async convertToNoBG (img) {
       fetch('https://k3nb3wm4vuxmel6raf2tg2ri2e0orfwj.lambda-url.ap-northeast-1.on.aws/?src=' + img)
         .then(res => res.blob()) // Gets the response and returns it as a blob
@@ -105,9 +105,10 @@ export default {
       this.selectedFiles = this.$refs.file.files;
     },
 
-    uploadFile() {
-      this.Images = this.$refs.file.files[0];
-      this.url = this.$refs.file.files[0];
+    uploadFile(file) {
+      var fileInput = document.getElementById('fileInput');   
+      this.Images = file;
+      this.Images.name = fileInput.files[0].name;
     },
     onUploadImgLoad() {
       let img = document.getElementById('uploadedImage11'); 
@@ -125,7 +126,6 @@ export default {
       this.noBGImgSrc = null;
       this.noBGImg = null;
       this.uploadedImage = null;
-      this.convertedImage = null;
       this.isLoaded = false;
       const headers = { 'Content-Type': this.Images.type };
       this.mapImages = null;
@@ -156,23 +156,26 @@ export default {
 </script>
 
 <style>
+  .flex-auto {
+    display: flex;
+    gap: 10px;
+  }
   .uploadedImage {
     margin-top: 20px;
     display: flex;
-    flex-direction: column;
   }
   .marginRight20 {
     margin-right: 20px;
     padding-bottom: 40px;
+  }
+  .marginRight10 {
+    margin-right: 10px;
   }
   .converting {
     text-align: center;
     font-size: 20px;
     margin-top: 30px;
     font-size: bold;
-  }
-  .rotate {
-    transition: transform 0.1s ease-in-out;
   }
   .range-slider {
     width: 250px !important;
